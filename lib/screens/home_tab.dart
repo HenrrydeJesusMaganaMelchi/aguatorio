@@ -46,7 +46,7 @@ class _HomeTabState extends State<HomeTab> {
     // Encuentra el "State Machine" (asumimos que se llama 'State Machine 1')
     var controller = StateMachineController.fromArtboard(
       artboard,
-      'State Machine 1',
+      'percentage',
     );
 
     if (controller != null) {
