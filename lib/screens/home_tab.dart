@@ -1,6 +1,8 @@
 // lib/screens/home_tab.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Necesario para cargar el archivo Rive
+import 'package:rive/rive.dart'; // <-- 1. Importa Rive
 import 'package:aguatorio/services/mock_api_service.dart';
 import 'package:aguatorio/models/daily_summary.dart';
 import 'package:aguatorio/screens/add_water_log_screen.dart';
@@ -19,13 +21,46 @@ class _HomeTabState extends State<HomeTab> {
 
   final _api = MockApiService();
 
+  // --- 2. Variables de Rive ---
+  Artboard? _riveArtboard; // El "lienzo" de la animación
+  SMIInput<double>? _riveInput; // La entrada "percentage"
+
   @override
   void initState() {
     super.initState();
+    // 3. Carga el archivo .riv PRIMERO
+    _loadRiveFile();
+    // Luego, carga los datos del resumen
     _fetchSummary();
   }
 
+  // --- 4. Función para cargar el archivo Rive ---
+  Future<void> _loadRiveFile() async {
+    // Carga el archivo desde tus assets
+    // ¡ASEGÚRATE DE QUE EL NOMBRE DEL ARCHIVO SEA CORRECTO!
+    final data = await rootBundle.load('assets/animations/vaso.riv');
+    final file = RiveFile.import(data);
+
+    // Encuentra el "Artboard" principal (el lienzo)
+    final artboard = file.mainArtboard;
+    // Encuentra el "State Machine" (asumimos que se llama 'State Machine 1')
+    var controller = StateMachineController.fromArtboard(
+      artboard,
+      'State Machine 1',
+    );
+
+    if (controller != null) {
+      artboard.addController(controller);
+      // --- 5. ¡LA CONEXIÓN CLAVE! ---
+      // Busca la entrada llamada "percentage"
+      _riveInput = controller.findInput<double>('percentage');
+    }
+
+    setState(() => _riveArtboard = artboard);
+  }
+
   Future<void> _fetchSummary() async {
+    // ... (esta función no cambia)
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -39,6 +74,8 @@ class _HomeTabState extends State<HomeTab> {
           _summary = summary;
           _isLoading = false;
         });
+        // --- 6. ACTUALIZA RIVE ---
+        _updateRiveAnimation();
       }
     } catch (e) {
       if (mounted) {
@@ -50,10 +87,24 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
+  // --- 7. Función que pasa el porcentaje a Rive ---
+  void _updateRiveAnimation() {
+    if (_riveInput != null && _summary != null) {
+      final goal = _summary!.goalMl > 0 ? _summary!.goalMl : 1;
+      // Calcula el porcentaje (ej. 0.45) y lo multiplica por 100
+      final percentageValue =
+          (_summary!.totalConsumedMl / goal).clamp(0.0, 1.0) * 100;
+
+      // ¡Le da el valor a la animación!
+      _riveInput!.value = percentageValue;
+    }
+  }
+
   void _addWaterLog() async {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const AddWaterLogScreen()));
+    // Vuelve a cargar los datos Y actualiza la animación
     _fetchSummary();
   }
 
@@ -70,7 +121,8 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
+    // Caso 1: Está cargando (espera a la API y a Rive)
+    if (_isLoading || _riveArtboard == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -85,9 +137,6 @@ class _HomeTabState extends State<HomeTab> {
 
     if (_summary != null) {
       final summary = _summary!;
-      // Nos aseguramos que la meta sea al menos 1 para evitar dividir por cero
-      final goal = summary.goalMl > 0 ? summary.goalMl : 1;
-      final percentage = (summary.totalConsumedMl / goal).clamp(0.0, 1.0);
 
       return Padding(
         padding: const EdgeInsets.all(20.0),
@@ -109,41 +158,19 @@ class _HomeTabState extends State<HomeTab> {
 
             const SizedBox(height: 40),
 
-            // --- 7. EL VASO QUE SE LLENA (¡LÓGICA CORREGIDA!) ---
+            // --- 8. EL VASO DE RIVE ---
             SizedBox(
               width: 250,
               height: 250,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // --- Capa 1: El AGUA (al fondo, animada) ---
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(end: percentage),
-                    duration: const Duration(milliseconds: 750),
-                    curve: Curves.easeInOut,
-                    builder: (context, animatedPercentage, child) {
-                      return ClipRect(
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          heightFactor: animatedPercentage,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Image.asset(
-                      'assets/images/vaso_lleno.png', // <-- ¡TU NUEVA IMAGEN DE AGUA!
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+                  // --- Capa 1: La Animación Rive ---
+                  _riveArtboard == null
+                      ? const SizedBox()
+                      : Rive(artboard: _riveArtboard!),
 
-                  // --- Capa 2: El CONTORNO DEL VASO (encima) ---
-                  Image.asset(
-                    'assets/images/vaso_vacio.png', // <-- ¡TU NUEVO CONTORNO!
-                    fit: BoxFit.contain,
-                  ),
-
-                  // --- Capa 3: El texto (encima de todo) ---
-                  // (¡Mi código SÍ usa los widgets de texto!)
+                  // --- Capa 2: El texto (encima de todo) ---
                   Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
