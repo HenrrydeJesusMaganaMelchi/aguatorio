@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:aguatorio/screens/login_screen.dart'; // Importa tu LoginScreen
+import 'package:flutter_svg/flutter_svg.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,9 +37,9 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // --- 1. LOGO ---
-            Image.asset(
-              'assets/images/Aguatorio_logo.png', // <-- ruta de donde se encuentra el logo
-              width: 150, // Ajusta el tamaño como necesites
+            SvgPicture.asset(
+              'assets/images/logo.svg',
+              height: 150, // Ajusta el tamaño
             ),
 
             const SizedBox(height: 24),

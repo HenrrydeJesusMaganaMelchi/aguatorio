@@ -1,34 +1,47 @@
 // lib/main.dart
+
 import 'package:flutter/material.dart';
+import 'package:rive/rive.dart'; // Importante para inicializar Rive en Web
+import 'package:provider/provider.dart';
 import 'package:aguatorio/screens/splash_screen.dart';
 import 'package:aguatorio/services/theme_service.dart';
-import 'package:provider/provider.dart';
 
-// --- Tus colores ---
-const Color kPrimaryBlue = Color(0xFF0066CC);
-const Color kSecondaryTeal = Color(0xFF4DB6AC);
+// --- COLORES MODERNOS ---
+// Azul vibrante para la acción principal
+const Color kPrimaryBlue = Color(0xFF2563EB);
+// Cian para acentos y gradientes
+const Color kSecondaryTeal = Color(0xFF06B6D4);
 
-void main() {
+// --- PALETA CLARA ---
+final _lightColorScheme = ColorScheme.fromSeed(
+  seedColor: kPrimaryBlue,
+  primary: kPrimaryBlue,
+  secondary: kSecondaryTeal,
+  brightness: Brightness.light,
+  surface: const Color(0xFFF8FAFC), // Fondo gris muy claro (Slate 50)
+);
+
+// --- PALETA OSCURA ---
+final _darkColorScheme = ColorScheme.fromSeed(
+  seedColor: kPrimaryBlue,
+  secondary: kSecondaryTeal,
+  brightness: Brightness.dark,
+  surface: const Color(
+    0xFF0F172A,
+  ), // Azul muy oscuro (Slate 900) - Se ve mejor que negro puro
+);
+
+void main() async {
+  // 1. Aseguramos que el motor de Flutter esté listo
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2. Inicializamos Rive (OBLIGATORIO para Web)
+  await RiveFile.initialize();
+
   runApp(
     ChangeNotifierProvider(create: (_) => ThemeService(), child: const MyApp()),
   );
 }
-
-// --- 1. DEFINIMOS LAS PALETAS DE COLOR FUERA ---
-final _lightColorScheme = ColorScheme.fromSeed(
-  seedColor: kPrimaryBlue,
-  primary:
-      kPrimaryBlue, // Forzamos el primario a ser nuestro azul en MODO CLARO
-  secondary: kSecondaryTeal,
-  brightness: Brightness.light,
-);
-
-final _darkColorScheme = ColorScheme.fromSeed(
-  seedColor: kPrimaryBlue, // Le damos la semilla
-  // ¡NO FORZAMOS EL PRIMARIO! Dejamos que genere uno claro.
-  secondary: kSecondaryTeal,
-  brightness: Brightness.dark,
-);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -41,71 +54,141 @@ class MyApp extends StatelessWidget {
       title: 'Aguatorio',
       debugShowCheckedModeBanner: false,
 
-      // --- 2. TEMA CLARO (Usa la paleta clara) ---
+      // ==============================================
+      //               TEMA CLARO
+      // ==============================================
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        colorScheme: _lightColorScheme, // Usa la paleta clara
-        appBarTheme: AppBarTheme(
-          backgroundColor: _lightColorScheme.primary,
-          foregroundColor: _lightColorScheme.onPrimary,
-          iconTheme: IconThemeData(color: _lightColorScheme.onPrimary),
+        colorScheme: _lightColorScheme,
+        scaffoldBackgroundColor: _lightColorScheme.surface,
+
+        // AppBar limpia
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          iconTheme: IconThemeData(color: Colors.black),
         ),
-        segmentedButtonTheme: SegmentedButtonThemeData(
-          style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.resolveWith<Color?>((
-              Set<MaterialState> states,
-            ) {
-              if (states.contains(MaterialState.selected)) {
-                return _lightColorScheme.primary;
-              }
-              return Colors.grey[200];
-            }),
-            foregroundColor: MaterialStateProperty.resolveWith<Color?>((
-              Set<MaterialState> states,
-            ) {
-              if (states.contains(MaterialState.selected)) {
-                return _lightColorScheme.onPrimary;
-              }
-              return Colors.black;
-            }),
+
+        // Tarjetas modernas
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          color: Colors.white,
+        ),
+
+        // Botones redondeados
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kPrimaryBlue,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
         ),
+
+        // Navegación Lateral (Web)
         navigationRailTheme: NavigationRailThemeData(
-          selectedIconTheme: IconThemeData(color: _lightColorScheme.primary),
-          selectedLabelTextStyle: TextStyle(color: _lightColorScheme.primary),
+          selectedIconTheme: IconThemeData(color: kPrimaryBlue),
+          selectedLabelTextStyle: TextStyle(
+            color: kPrimaryBlue,
+            fontWeight: FontWeight.bold,
+          ),
           unselectedIconTheme: IconThemeData(color: Colors.grey[600]),
           unselectedLabelTextStyle: TextStyle(color: Colors.grey[600]),
+          backgroundColor: Colors.white,
         ),
+
+        // Navegación Inferior (Móvil)
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: _lightColorScheme.primary,
-          unselectedItemColor: Colors.grey[600],
+          backgroundColor: Colors.white,
+          selectedItemColor: kPrimaryBlue,
+          unselectedItemColor: Colors.grey[500],
+          elevation: 10,
+          type: BottomNavigationBarType.fixed,
         ),
       ),
 
-      // --- 3. TEMA OSCURO (Usa la paleta oscura) ---
+      // ==============================================
+      //               TEMA OSCURO
+      // ==============================================
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        colorScheme: _darkColorScheme, // Usa la paleta oscura
-        // Ahora le decimos que use los colores DE SU PROPIA PALETA
+        colorScheme: _darkColorScheme,
+        scaffoldBackgroundColor: _darkColorScheme.surface,
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+
+        // Tarjetas oscuras pero visibles
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          color: const Color(0xFF1E293B), // Slate 800
+        ),
+
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _darkColorScheme.primary, // Azul claro generado
+            foregroundColor: Colors.black, // Texto negro para contraste
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ),
+
+        // Navegación Lateral (Web) - Corregido para visibilidad
         navigationRailTheme: NavigationRailThemeData(
-          selectedIconTheme: IconThemeData(
+          backgroundColor: const Color(0xFF0F172A),
+          selectedIconTheme: IconThemeData(color: _darkColorScheme.primary),
+          selectedLabelTextStyle: TextStyle(
             color: _darkColorScheme.primary,
-          ), // ¡Usará el azul claro!
-          selectedLabelTextStyle: TextStyle(color: _darkColorScheme.primary),
-          unselectedIconTheme: IconThemeData(color: Colors.grey[400]),
+            fontWeight: FontWeight.bold,
+          ),
+          unselectedIconTheme: IconThemeData(
+            color: Colors.grey[400],
+          ), // Gris claro
           unselectedLabelTextStyle: TextStyle(color: Colors.grey[400]),
         ),
+
+        // Navegación Inferior (Móvil) - Corregido para visibilidad
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: _darkColorScheme.primary, // ¡Usará el azul claro!
-          unselectedItemColor: Colors.grey[400],
+          backgroundColor: const Color(
+            0xFF1E293B,
+          ), // Fondo de barra un poco más claro que el fondo app
+          selectedItemColor: _darkColorScheme.primary,
+          unselectedItemColor: Colors.grey[400], // Gris claro
+          elevation: 0,
+          type: BottomNavigationBarType.fixed,
         ),
       ),
 
-      // --- EL INTERRUPTOR PRINCIPAL ---
       themeMode: themeService.themeMode,
-
       home: const SplashScreen(),
     );
   }

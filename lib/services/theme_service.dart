@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class ThemeService with ChangeNotifier {
   // 2. El estado que guardamos: el modo de tema.
   //    'ThemeMode.system' usa el modo del S.O. por defecto.
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.light;
 
   // 3. Un 'getter' para que la app pueda leer el estado actual.
   ThemeMode get themeMode => _themeMode;
