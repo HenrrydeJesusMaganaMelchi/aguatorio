@@ -1,8 +1,13 @@
 // lib/screens/home_tab.dart
 
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:flutter/services.dart';
 import 'package:rive/rive.dart' hide LinearGradient;
+=======
+import 'package:flutter/services.dart'; // Necesario para cargar el archivo Rive
+import 'package:rive/rive.dart'; // <-- 1. Importa Rive
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
 import 'package:aguatorio/services/mock_api_service.dart';
 import 'package:aguatorio/models/daily_summary.dart';
 import 'package:aguatorio/screens/add_water_log_screen.dart';
@@ -21,12 +26,19 @@ class _HomeTabState extends State<HomeTab> {
 
   final _api = MockApiService();
 
+<<<<<<< HEAD
   Artboard? _riveArtboard;
   SMIInput<double>? _riveInput;
+=======
+  // --- 2. Variables de Rive ---
+  Artboard? _riveArtboard; // El "lienzo" de la animación
+  SMIInput<double>? _riveInput; // La entrada "percentage"
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     _loadRiveFile();
     _fetchSummary();
   }
@@ -50,9 +62,41 @@ class _HomeTabState extends State<HomeTab> {
     } catch (e) {
       print("Error cargando Rive: $e");
     }
+=======
+    // 3. Carga el archivo .riv PRIMERO
+    _loadRiveFile();
+    // Luego, carga los datos del resumen
+    _fetchSummary();
+  }
+
+  // --- 4. Función para cargar el archivo Rive ---
+  Future<void> _loadRiveFile() async {
+    // Carga el archivo desde tus assets
+    // ¡ASEGÚRATE DE QUE EL NOMBRE DEL ARCHIVO SEA CORRECTO!
+    final data = await rootBundle.load('assets/animations/vaso.riv');
+    final file = RiveFile.import(data);
+
+    // Encuentra el "Artboard" principal (el lienzo)
+    final artboard = file.mainArtboard;
+    // Encuentra el "State Machine" (asumimos que se llama 'State Machine 1')
+    var controller = StateMachineController.fromArtboard(
+      artboard,
+      'percentage',
+    );
+
+    if (controller != null) {
+      artboard.addController(controller);
+      // --- 5. ¡LA CONEXIÓN CLAVE! ---
+      // Busca la entrada llamada "percentage"
+      _riveInput = controller.findInput<double>('percentage');
+    }
+
+    setState(() => _riveArtboard = artboard);
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
   }
 
   Future<void> _fetchSummary() async {
+    // ... (esta función no cambia)
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -66,6 +110,10 @@ class _HomeTabState extends State<HomeTab> {
           _summary = summary;
           _isLoading = false;
         });
+<<<<<<< HEAD
+=======
+        // --- 6. ACTUALIZA RIVE ---
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
         _updateRiveAnimation();
       }
     } catch (e) {
@@ -78,11 +126,23 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
+<<<<<<< HEAD
   void _updateRiveAnimation() {
     if (_riveInput != null && _summary != null) {
       final goal = _summary!.goalMl > 0 ? _summary!.goalMl : 1;
       final percentageValue =
           (_summary!.totalConsumedMl / goal).clamp(0.0, 1.0) * 100;
+=======
+  // --- 7. Función que pasa el porcentaje a Rive ---
+  void _updateRiveAnimation() {
+    if (_riveInput != null && _summary != null) {
+      final goal = _summary!.goalMl > 0 ? _summary!.goalMl : 1;
+      // Calcula el porcentaje (ej. 0.45) y lo multiplica por 100
+      final percentageValue =
+          (_summary!.totalConsumedMl / goal).clamp(0.0, 1.0) * 100;
+
+      // ¡Le da el valor a la animación!
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
       _riveInput!.value = percentageValue;
     }
   }
@@ -91,6 +151,7 @@ class _HomeTabState extends State<HomeTab> {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const AddWaterLogScreen()));
+    // Vuelve a cargar los datos Y actualiza la animación
     _fetchSummary();
   }
 
@@ -115,7 +176,12 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _buildBody() {
+<<<<<<< HEAD
     if (_isLoading && _summary == null) {
+=======
+    // Caso 1: Está cargando (espera a la API y a Rive)
+    if (_isLoading || _riveArtboard == null) {
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -125,10 +191,15 @@ class _HomeTabState extends State<HomeTab> {
       );
     }
 
+<<<<<<< HEAD
     final summary = _summary!;
     final percentDisplay =
         ((summary.totalConsumedMl / summary.goalMl).clamp(0.0, 1.0) * 100)
             .toInt();
+=======
+    if (_summary != null) {
+      final summary = _summary!;
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -138,6 +209,7 @@ class _HomeTabState extends State<HomeTab> {
           // (YA NO HAY HEADER EXTERNO AQUÍ)
           const SizedBox(height: 10),
 
+<<<<<<< HEAD
           // --- TARJETA PRINCIPAL (GRADIENTE) ---
           Container(
             width: double.infinity,
@@ -149,6 +221,42 @@ class _HomeTabState extends State<HomeTab> {
                 colors: [
                   Theme.of(context).colorScheme.primary,
                   Theme.of(context).colorScheme.secondary,
+=======
+            const SizedBox(height: 40),
+
+            // --- 8. EL VASO DE RIVE ---
+            SizedBox(
+              width: 250,
+              height: 250,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // --- Capa 1: La Animación Rive ---
+                  _riveArtboard == null
+                      ? const SizedBox()
+                      : Rive(artboard: _riveArtboard!),
+
+                  // --- Capa 2: El texto (encima de todo) ---
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${summary.totalConsumedMl} ml',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                        Text(
+                          'de ${summary.goalMl} ml',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
                 ],
               ),
               borderRadius: BorderRadius.circular(30),

@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   fl_chart: ^0.68.0
   provider: ^6.1.2
+  rive: ^0.13.4
   #toggle_switch: ^2.3.0
   rive: ^0.13.4
   flutter_svg: ^2.0.10
@@ -67,6 +68,10 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
