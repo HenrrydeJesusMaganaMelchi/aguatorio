@@ -1,13 +1,9 @@
 // lib/screens/home_tab.dart
 
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'package:flutter/services.dart';
+// Ocultamos LinearGradient de Rive para usar el de Flutter en el fondo de la tarjeta
 import 'package:rive/rive.dart' hide LinearGradient;
-=======
-import 'package:flutter/services.dart'; // Necesario para cargar el archivo Rive
-import 'package:rive/rive.dart'; // <-- 1. Importa Rive
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
 import 'package:aguatorio/services/mock_api_service.dart';
 import 'package:aguatorio/models/daily_summary.dart';
 import 'package:aguatorio/screens/add_water_log_screen.dart';
@@ -26,28 +22,26 @@ class _HomeTabState extends State<HomeTab> {
 
   final _api = MockApiService();
 
-<<<<<<< HEAD
+  // --- Variables de Rive ---
   Artboard? _riveArtboard;
   SMIInput<double>? _riveInput;
-=======
-  // --- 2. Variables de Rive ---
-  Artboard? _riveArtboard; // El "lienzo" de la animación
-  SMIInput<double>? _riveInput; // La entrada "percentage"
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
 
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD
+    // Cargamos la animación y los datos al iniciar
     _loadRiveFile();
     _fetchSummary();
   }
 
+  // --- Carga del archivo Rive ---
   Future<void> _loadRiveFile() async {
     try {
       final data = await rootBundle.load('assets/animations/vaso.riv');
       final file = RiveFile.import(data);
       final artboard = file.mainArtboard;
+
+      // Buscamos la Máquina de Estados llamada 'percentage'
       var controller = StateMachineController.fromArtboard(
         artboard,
         'percentage',
@@ -55,54 +49,28 @@ class _HomeTabState extends State<HomeTab> {
 
       if (controller != null) {
         artboard.addController(controller);
+        // Buscamos la entrada numérica llamada 'percentage'
         _riveInput = controller.findInput<double>('percentage');
       }
+
       setState(() => _riveArtboard = artboard);
+
+      // Si los datos llegaron antes que la animación, actualizamos ahora
       _updateRiveAnimation();
     } catch (e) {
       print("Error cargando Rive: $e");
     }
-=======
-    // 3. Carga el archivo .riv PRIMERO
-    _loadRiveFile();
-    // Luego, carga los datos del resumen
-    _fetchSummary();
   }
 
-  // --- 4. Función para cargar el archivo Rive ---
-  Future<void> _loadRiveFile() async {
-    // Carga el archivo desde tus assets
-    // ¡ASEGÚRATE DE QUE EL NOMBRE DEL ARCHIVO SEA CORRECTO!
-    final data = await rootBundle.load('assets/animations/vaso.riv');
-    final file = RiveFile.import(data);
-
-    // Encuentra el "Artboard" principal (el lienzo)
-    final artboard = file.mainArtboard;
-    // Encuentra el "State Machine" (asumimos que se llama 'State Machine 1')
-    var controller = StateMachineController.fromArtboard(
-      artboard,
-      'percentage',
-    );
-
-    if (controller != null) {
-      artboard.addController(controller);
-      // --- 5. ¡LA CONEXIÓN CLAVE! ---
-      // Busca la entrada llamada "percentage"
-      _riveInput = controller.findInput<double>('percentage');
-    }
-
-    setState(() => _riveArtboard = artboard);
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
-  }
-
+  // --- Carga de Datos del Backend ---
   Future<void> _fetchSummary() async {
-    // ... (esta función no cambia)
     if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Simulamos un pequeño retraso de red
       await Future.delayed(const Duration(milliseconds: 500));
       final summary = await _api.getDailySummary(DateTime.now());
       if (mounted) {
@@ -110,10 +78,7 @@ class _HomeTabState extends State<HomeTab> {
           _summary = summary;
           _isLoading = false;
         });
-<<<<<<< HEAD
-=======
-        // --- 6. ACTUALIZA RIVE ---
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
+        // Actualizamos la animación con los nuevos datos
         _updateRiveAnimation();
       }
     } catch (e) {
@@ -126,43 +91,38 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-<<<<<<< HEAD
+  // --- Actualizar el nivel de agua en Rive ---
   void _updateRiveAnimation() {
     if (_riveInput != null && _summary != null) {
       final goal = _summary!.goalMl > 0 ? _summary!.goalMl : 1;
-      final percentageValue =
-          (_summary!.totalConsumedMl / goal).clamp(0.0, 1.0) * 100;
-=======
-  // --- 7. Función que pasa el porcentaje a Rive ---
-  void _updateRiveAnimation() {
-    if (_riveInput != null && _summary != null) {
-      final goal = _summary!.goalMl > 0 ? _summary!.goalMl : 1;
-      // Calcula el porcentaje (ej. 0.45) y lo multiplica por 100
+      // Calculamos el porcentaje (0 a 100)
       final percentageValue =
           (_summary!.totalConsumedMl / goal).clamp(0.0, 1.0) * 100;
 
-      // ¡Le da el valor a la animación!
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
+      // Le pasamos el valor a la animación
       _riveInput!.value = percentageValue;
     }
   }
 
+  // --- Botón de Agregar ---
   void _addWaterLog() async {
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const AddWaterLogScreen()));
-    // Vuelve a cargar los datos Y actualiza la animación
+    // Al volver, recargamos los datos
     _fetchSummary();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Fondo sutil en modo claro para que resalte la tarjeta
       backgroundColor: Theme.of(context).brightness == Brightness.light
           ? const Color(0xFFF5F7FA)
           : null,
       body: _buildBody(),
 
+      // Botón Flotante Moderno
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addWaterLog,
         icon: const Icon(Icons.water_drop),
@@ -176,12 +136,8 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _buildBody() {
-<<<<<<< HEAD
+    // Muestra carga solo si no tenemos ni datos ni animación lista
     if (_isLoading && _summary == null) {
-=======
-    // Caso 1: Está cargando (espera a la API y a Rive)
-    if (_isLoading || _riveArtboard == null) {
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -191,29 +147,21 @@ class _HomeTabState extends State<HomeTab> {
       );
     }
 
-<<<<<<< HEAD
     final summary = _summary!;
+    // Porcentaje para el texto
     final percentDisplay =
         ((summary.totalConsumedMl / summary.goalMl).clamp(0.0, 1.0) * 100)
             .toInt();
-=======
-    if (_summary != null) {
-      final summary = _summary!;
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // (YA NO HAY HEADER EXTERNO AQUÍ)
-          const SizedBox(height: 10),
-
-<<<<<<< HEAD
-          // --- TARJETA PRINCIPAL (GRADIENTE) ---
+          // --- TARJETA PRINCIPAL (Dashboard) ---
           Container(
             width: double.infinity,
-            height: 450, // Aumentamos altura para que quepa el header
+            height: 480, // Altura suficiente para todo el contenido
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -221,42 +169,6 @@ class _HomeTabState extends State<HomeTab> {
                 colors: [
                   Theme.of(context).colorScheme.primary,
                   Theme.of(context).colorScheme.secondary,
-=======
-            const SizedBox(height: 40),
-
-            // --- 8. EL VASO DE RIVE ---
-            SizedBox(
-              width: 250,
-              height: 250,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // --- Capa 1: La Animación Rive ---
-                  _riveArtboard == null
-                      ? const SizedBox()
-                      : Rive(artboard: _riveArtboard!),
-
-                  // --- Capa 2: El texto (encima de todo) ---
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${summary.totalConsumedMl} ml',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                        Text(
-                          'de ${summary.goalMl} ml',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ],
-                    ),
-                  ),
->>>>>>> 5b39aae73a5e84acbbd71e187748f4b663929b70
                 ],
               ),
               borderRadius: BorderRadius.circular(30),
@@ -270,7 +182,7 @@ class _HomeTabState extends State<HomeTab> {
             ),
             child: Stack(
               children: [
-                // Decoración de fondo
+                // Decoración de fondo (Círculo sutil)
                 Positioned(
                   top: -50,
                   right: -50,
@@ -280,14 +192,13 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                 ),
 
-                // --- CONTENIDO DE LA TARJETA ---
+                // Contenido de la Tarjeta
                 Padding(
-                  padding: const EdgeInsets.all(24.0), // Margen interno
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween, // Distribuye el espacio
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 1. HEADER INTERNO (Hola Usuario)
+                      // 1. Header Interno (Saludo)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -299,7 +210,7 @@ class _HomeTabState extends State<HomeTab> {
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.white, // Texto Blanco
+                                  color: Colors.white,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -307,14 +218,11 @@ class _HomeTabState extends State<HomeTab> {
                                 'Mantente hidratado hoy',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(
-                                    0.8,
-                                  ), // Blanco semi-transparente
+                                  color: Colors.white.withOpacity(0.8),
                                 ),
                               ),
                             ],
                           ),
-                          // Icono de perfil en blanco
                           CircleAvatar(
                             backgroundColor: Colors.white.withOpacity(0.2),
                             child: const Icon(
@@ -325,14 +233,14 @@ class _HomeTabState extends State<HomeTab> {
                         ],
                       ),
 
-                      // 2. EL VASO RIVE
+                      // 2. Vaso Animado Rive
                       Expanded(
                         child: Center(
                           child: SizedBox(
-                            height: 220,
-                            width: 220,
+                            height: 250,
+                            width: 250,
                             child: _riveArtboard == null
-                                ? const SizedBox()
+                                ? const SizedBox() // Esperando carga...
                                 : Rive(
                                     artboard: _riveArtboard!,
                                     fit: BoxFit.contain,
@@ -341,7 +249,7 @@ class _HomeTabState extends State<HomeTab> {
                         ),
                       ),
 
-                      // 3. DATOS DE PROGRESO
+                      // 3. Datos Numéricos
                       Column(
                         children: [
                           Text(
@@ -371,7 +279,7 @@ class _HomeTabState extends State<HomeTab> {
 
           const SizedBox(height: 30),
 
-          // --- Resumen Rápido ---
+          // --- Resumen Rápido (Tarjetas Pequeñas) ---
           Text(
             "Detalles",
             style: Theme.of(
@@ -402,12 +310,14 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ],
           ),
+          // Espacio extra para el FAB
           const SizedBox(height: 80),
         ],
       ),
     );
   }
 
+  // Widget auxiliar para tarjetas pequeñas
   Widget _buildStatCard({
     required IconData icon,
     required String label,
