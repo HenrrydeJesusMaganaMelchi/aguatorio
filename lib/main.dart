@@ -1,10 +1,12 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:rive/rive.dart'; // Importante para inicializar Rive en Web
 import 'package:provider/provider.dart';
 import 'package:aguatorio/screens/splash_screen.dart';
 import 'package:aguatorio/services/theme_service.dart';
+import 'package:aguatorio/firebase_options.dart';
 
 // --- COLORES MODERNOS ---
 // Azul vibrante para la acción principal
@@ -35,7 +37,10 @@ void main() async {
   // 1. Aseguramos que el motor de Flutter esté listo
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Inicializamos Rive (OBLIGATORIO para Web)
+  // 2. Inicializamos Firebase (OBLIGATORIO antes de usar cualquier servicio de Firebase)
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // 3. Inicializamos Rive (OBLIGATORIO para Web)
   await RiveFile.initialize();
 
   runApp(

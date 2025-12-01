@@ -1,7 +1,7 @@
 // lib/screens/login_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:aguatorio/services/mock_api_service.dart';
+import 'package:aguatorio/services/auth_service.dart';
 import 'package:aguatorio/screens/main_scaffold_screen.dart';
 import 'package:aguatorio/screens/registration_screen.dart';
 import 'package:aguatorio/widgets/responsive_layout_wrapper.dart';
@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  final _api = MockApiService();
+  final _authService = AuthService();
 
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
@@ -33,22 +33,25 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        final response = await _api.login(
-          _emailController.text,
-          _passwordController.text,
+        // Login con Firebase Authentication
+        final userCredential = await _authService.signInWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
         );
 
-        print("¡Login exitoso! Token: ${response['token']}");
-        print("Usuario: ${response['user'].name}");
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("¡Bienvenido, ${response['user'].name}!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        final user = userCredential.user;
+        print("¡Login exitoso! UID: ${user?.uid}");
+        print("Email: ${user?.email}");
 
         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("¡Bienvenido, ${user?.email ?? 'Usuario'}!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navegar a la pantalla principal
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const MainScaffoldScreen()),
             (Route<dynamic> route) => false,

@@ -41,8 +41,9 @@ class _AchievementsTabState extends State<AchievementsTab> {
               child: FutureBuilder<List<Achievement>>(
                 future: _achievementsFuture,
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting)
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
+                  }
                   if (!snapshot.hasData) return const Text("Sin datos");
 
                   final achievements = snapshot.data!;

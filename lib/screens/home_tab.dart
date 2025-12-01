@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // Ocultamos LinearGradient de Rive para usar el de Flutter en el fondo de la tarjeta
 import 'package:rive/rive.dart' hide LinearGradient;
-import 'package:aguatorio/services/mock_api_service.dart';
+import 'package:aguatorio/services/auth_service.dart';
+import 'package:aguatorio/services/database_service.dart';
 import 'package:aguatorio/models/daily_summary.dart';
 import 'package:aguatorio/screens/add_water_log_screen.dart';
 
@@ -19,8 +20,10 @@ class _HomeTabState extends State<HomeTab> {
   bool _isLoading = true;
   DailySummary? _summary;
   String? _errorMessage;
+  String _userName = 'Usuario';
 
-  final _api = MockApiService();
+  final _authService = AuthService();
+  final _databaseService = DatabaseService();
 
   // --- Variables de Rive ---
   Artboard? _riveArtboard;
@@ -70,21 +73,47 @@ class _HomeTabState extends State<HomeTab> {
     });
 
     try {
-      // Simulamos un pequeño retraso de red
-      await Future.delayed(const Duration(milliseconds: 500));
-      final summary = await _api.getDailySummary(DateTime.now());
+      // Obtener el usuario actual
+      final user = _authService.currentUser;
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Obtener el perfil del usuario de Firestore
+      final profile = await _databaseService.getUserProfile(user.uid);
+      if (profile == null) {
+        throw Exception('Perfil de usuario no encontrado');
+      }
+
+      // Obtener la meta diaria de agua (por defecto 2000 ml si no está configurada)
+      final dailyGoal = profile['dailyWaterGoal'] as int? ?? 2000;
+      final userName =
+          profile['name'] as String? ?? user.displayName ?? 'Usuario';
+
+      // Por ahora, usamos valores mock para el consumo actual
+      // Tu compañero implementará la lógica de logs de agua
+      final summary = DailySummary(
+        date: DateTime.now(),
+        goalMl: dailyGoal,
+        totalConsumedMl:
+            0, // Esto se actualizará cuando se implementen los logs
+        hourlyBreakdown: {},
+      );
+
       if (mounted) {
         setState(() {
           _summary = summary;
+          _userName = userName;
           _isLoading = false;
         });
         // Actualizamos la animación con los nuevos datos
         _updateRiveAnimation();
       }
     } catch (e) {
+      print('Error en _fetchSummary: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = "Error al cargar datos";
+          _errorMessage = "Error al cargar datos: $e";
           _isLoading = false;
         });
       }
@@ -205,9 +234,9 @@ class _HomeTabState extends State<HomeTab> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Hola, Usuario 👋',
-                                style: TextStyle(
+                              Text(
+                                'Hola, $_userName 👋',
+                                style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,

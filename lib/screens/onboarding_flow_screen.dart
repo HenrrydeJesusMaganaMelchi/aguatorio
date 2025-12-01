@@ -1,9 +1,10 @@
 // lib/screens/onboarding_flow_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:aguatorio/services/mock_api_service.dart'; // Revisa este nombre
-import 'package:aguatorio/screens/main_scaffold_screen.dart'; // La pantalla principal
-import 'package:aguatorio/widgets/responsive_layout_wrapper.dart'; // El wrapper responsivo
+import 'package:aguatorio/services/auth_service.dart';
+import 'package:aguatorio/services/database_service.dart';
+import 'package:aguatorio/screens/main_scaffold_screen.dart';
+import 'package:aguatorio/widgets/responsive_layout_wrapper.dart';
 
 class OnboardingFlowScreen extends StatefulWidget {
   const OnboardingFlowScreen({super.key});
@@ -16,7 +17,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   // 1. Claves para manejar el estado
   final _formKey = GlobalKey<FormState>();
   final _weightController = TextEditingController(); // Para el peso
-  final _api = MockApiService();
+  final _authService = AuthService();
+  final _databaseService = DatabaseService();
 
   // 2. Estado para los botones de selección
   //    (Usamos 'Set' para el widget SegmentedButton)
@@ -36,29 +38,70 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
       _isLoading = true;
     });
 
-    // Lógica (Pausada): En un futuro, aquí llamaríamos a la API
-    // para calcular la meta, pasando el peso y las selecciones.
-    //
-    // final double weight = double.parse(_weightController.text);
-    // final String activity = _activitySelection.first;
-    // final String climate = _climateSelection.first;
-    // await _api.calculateAndSaveGoal(weight, activity, climate);
-    //
-    // Por ahora, solo fingimos un retraso:
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Verificar que haya un usuario autenticado
+      final user = _authService.currentUser;
+      if (user == null) {
+        throw Exception('No hay usuario autenticado');
+      }
 
-    print("Onboarding completado:");
-    print("Peso: ${_weightController.text} kg");
-    print("Actividad: ${_activitySelection.first}");
-    print("Clima: ${_climateSelection.first}");
+      // Obtener los valores del formulario
+      final double weight = double.parse(_weightController.text);
+      final String activity = _activitySelection.first;
+      final String climate = _climateSelection.first;
 
-    // --- Navegación ---
-    if (mounted) {
-      // Navega a la pantalla principal y borra todo el historial anterior
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const MainScaffoldScreen()),
-        (Route<dynamic> route) => false, // Borra todo
+      // Guardar datos en Firestore y calcular meta de agua
+      await _databaseService.saveOnboardingData(
+        uid: user.uid,
+        weight: weight,
+        activityLevel: activity,
+        climate: climate,
       );
+
+      // Calcular la meta para mostrarla al usuario
+      final goal = _databaseService.calculateDailyWaterGoal(
+        weight: weight,
+        activityLevel: activity,
+        climate: climate,
+      );
+
+      print("Onboarding completado:");
+      print("Peso: $weight kg");
+      print("Actividad: $activity");
+      print("Clima: $climate");
+      print("Meta diaria de agua: $goal ml");
+
+      // --- Navegación ---
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("¡Perfil completado! Tu meta diaria es $goal ml"),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Navega a la pantalla principal y borra todo el historial anterior
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainScaffoldScreen()),
+          (Route<dynamic> route) => false, // Borra todo
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: ${e.toString().replaceFirst("Exception: ", "")}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

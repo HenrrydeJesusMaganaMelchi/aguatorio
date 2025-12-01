@@ -1,7 +1,8 @@
 // lib/screens/registration_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:aguatorio/services/mock_api_service.dart';
+import 'package:aguatorio/services/auth_service.dart';
+import 'package:aguatorio/services/database_service.dart';
 import 'package:aguatorio/screens/onboarding_flow_screen.dart';
 import 'package:aguatorio/widgets/responsive_layout_wrapper.dart';
 
@@ -24,7 +25,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  final _api = MockApiService();
+  final _authService = AuthService();
+  final _databaseService = DatabaseService();
 
   Future<void> _handleRegistration() async {
     FocusScope.of(context).unfocus();
@@ -43,26 +45,42 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       });
 
       try {
-        final data = {
-          'name': _nameController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
-          'address': _addressController.text,
-          'password': _passwordController.text,
-        };
+        // 1. Crear usuario en Firebase Authentication
+        final userCredential = await _authService
+            .createUserWithEmailAndPassword(
+              email: _emailController.text,
+              password: _passwordController.text,
+            );
 
-        final response = await _api.register(data);
+        final user = userCredential.user;
+        if (user == null) {
+          throw Exception('Error al crear usuario');
+        }
 
-        print("¡Registro exitoso! Usuario: ${response['user'].name}");
+        // 2. Actualizar el nombre del usuario en Firebase Auth
+        await _authService.updateDisplayName(_nameController.text);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("¡Registro exitoso, ${response['user'].name}!"),
-            backgroundColor: Colors.green,
-          ),
+        // 3. Guardar información adicional en Firestore
+        await _databaseService.createUserProfile(
+          uid: user.uid,
+          name: _nameController.text,
+          email: _emailController.text,
+          phone: _phoneController.text,
+          address: _addressController.text,
         );
 
+        print("¡Registro exitoso! UID: ${user.uid}");
+        print("Nombre: ${_nameController.text}");
+
         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("¡Registro exitoso, ${_nameController.text}!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Navegar al cuestionario de onboarding
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => const OnboardingFlowScreen(),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "755953959816",
+    "project_id": "aguatorio-706f2",
+    "storage_bucket": "aguatorio-706f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:755953959816:android:7d4a994cf85dd1a0bb703d",
+        "android_client_info": {
+          "package_name": "com.example.aguatorio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9NyKQ1pgOaDQiurnZ36fHKf_kcgJodSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
