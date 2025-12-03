@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:aguatorio/services/auth_service.dart';
+import 'package:aguatorio/services/database_service.dart';
 import 'package:aguatorio/screens/main_scaffold_screen.dart';
 import 'package:aguatorio/screens/registration_screen.dart';
 import 'package:aguatorio/widgets/responsive_layout_wrapper.dart';
@@ -43,10 +44,21 @@ class _LoginScreenState extends State<LoginScreen> {
         print("¡Login exitoso! UID: ${user?.uid}");
         print("Email: ${user?.email}");
 
+        // Obtener nombre del usuario
+        String welcomeName = user?.email ?? 'Usuario';
+        if (user != null) {
+          final databaseService =
+              DatabaseService(); // Instancia local o usar provider
+          final profile = await databaseService.getUserProfile(user.uid);
+          if (profile != null && profile['name'] != null) {
+            welcomeName = profile['name'];
+          }
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("¡Bienvenido, ${user?.email ?? 'Usuario'}!"),
+              content: Text("¡Bienvenido, $welcomeName!"),
               backgroundColor: Colors.green,
             ),
           );

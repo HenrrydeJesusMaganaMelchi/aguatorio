@@ -95,8 +95,7 @@ class _HomeTabState extends State<HomeTab> {
       final summary = DailySummary(
         date: DateTime.now(),
         goalMl: dailyGoal,
-        totalConsumedMl:
-            0, // Esto se actualizará cuando se implementen los logs
+        totalConsumedMl: (profile['totalConsumedMl'] as num?)?.toInt() ?? 0,
         hourlyBreakdown: {},
       );
 

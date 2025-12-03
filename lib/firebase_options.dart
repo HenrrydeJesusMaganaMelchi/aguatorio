@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     projectId: 'aguatorio-706f2',
     storageBucket: 'aguatorio-706f2.firebasestorage.app',
   );
+
 }

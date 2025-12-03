@@ -179,8 +179,79 @@ class DatabaseService {
     }
   }
 
+  /// Actualizar meta diaria de agua manualmente
+  Future<void> updateDailyGoal(String uid, int newGoal) async {
+    try {
+      await _usersCollection.doc(uid).update({
+        'dailyWaterGoal': newGoal,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Error al actualizar meta diaria: $e');
+    }
+  }
+
   /// Stream para escuchar cambios en el perfil del usuario
   Stream<DocumentSnapshot> userProfileStream(String uid) {
     return _usersCollection.doc(uid).snapshots();
+  }
+
+  /// Registrar consumo de agua
+  Future<void> addWaterLog({
+    required String uid,
+    required int amount,
+    required DateTime timestamp,
+    String? activityId,
+    String type = 'water',
+  }) async {
+    try {
+      // 1. Guardar el log en la subcolección 'water_logs'
+      await _usersCollection.doc(uid).collection('water_logs').add({
+        'amount': amount,
+        'timestamp': Timestamp.fromDate(timestamp),
+        'activityId': activityId,
+        'type': type,
+      });
+
+      // 2. Actualizar el total diario en el documento del usuario
+      await _usersCollection.doc(uid).update({
+        'totalConsumedMl': FieldValue.increment(amount),
+        'lastLogDate': Timestamp.fromDate(timestamp),
+      });
+    } catch (e) {
+      throw Exception('Error al registrar consumo de agua: $e');
+    }
+  }
+
+  /// Obtener logs de agua en un rango de fechas
+  Future<List<Map<String, dynamic>>> getWaterLogs({
+    required String uid,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      final snapshot = await _usersCollection
+          .doc(uid)
+          .collection('water_logs')
+          .where(
+            'timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+          )
+          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+          .orderBy('timestamp', descending: false)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        // Convertir Timestamp a DateTime para facilitar el uso en la UI
+        if (data['timestamp'] is Timestamp) {
+          data['timestamp'] = (data['timestamp'] as Timestamp).toDate();
+        }
+        return data;
+      }).toList();
+    } catch (e) {
+      print("Error obteniendo logs: $e");
+      return [];
+    }
   }
 }

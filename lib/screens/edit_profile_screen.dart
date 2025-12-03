@@ -1,7 +1,9 @@
 // lib/screens/edit_profile_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:aguatorio/widgets/responsive_layout_wrapper.dart'; // Importa el wrapper responsivo
+import 'package:aguatorio/widgets/responsive_layout_wrapper.dart';
+import 'package:aguatorio/services/auth_service.dart';
+import 'package:aguatorio/services/database_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -18,10 +20,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
 
+  final _authService = AuthService();
+  final _databaseService = DatabaseService();
+
   bool _isLoading = false;
 
-  // 2. Función para "Guardar" (solo imprime)
-  void _handleSave() {
+  // 2. Función para "Guardar"
+  Future<void> _handleSave() async {
     FocusScope.of(context).unfocus(); // Oculta el teclado
 
     if (_formKey.currentState!.validate()) {
@@ -29,25 +34,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _isLoading = true;
       });
 
-      // Lógica (Pausada): En un futuro, aquí llamaríamos a la API
-      // para actualizar los datos del usuario.
-      print("Guardando perfil...");
+      try {
+        final user = _authService.currentUser;
+        if (user != null) {
+          await _databaseService.updateUserProfile(
+            uid: user.uid,
+            name: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            address: _addressController.text.trim(),
+            // email no se actualiza aquí por seguridad/complejidad de Firebase Auth
+          );
 
-      // Simula un retraso de red
-      Future.delayed(const Duration(seconds: 1), () {
-        setState(() {
-          _isLoading = false;
-        });
-        // Muestra un mensaje de éxito
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Perfil actualizado (simulado)"),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Cierra la pantalla
-        Navigator.of(context).pop();
-      });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Perfil actualizado correctamente"),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.of(context).pop();
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Error al actualizar: $e"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -57,15 +80,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     print("Abriendo selector de imagen...");
   }
 
-  // 4. Llenar los campos con datos falsos al inicio
+  // 4. Llenar los campos con datos reales al inicio
   @override
   void initState() {
     super.initState();
-    // (Lógica Futura): Aquí cargaríamos los datos reales del usuario
-    _nameController.text = "Usuario de Prueba";
-    _emailController.text = "test@test.com";
-    _phoneController.text = "9981234567";
-    _addressController.text = "Av. Siempre Viva 123";
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      final profile = await _databaseService.getUserProfile(user.uid);
+      if (profile != null && mounted) {
+        setState(() {
+          _nameController.text = profile['name'] ?? '';
+          _emailController.text = profile['email'] ?? user.email ?? '';
+          _phoneController.text = profile['phone'] ?? '';
+          _addressController.text = profile['address'] ?? '';
+        });
+      }
+    }
   }
 
   // 5. El constructor de la UI

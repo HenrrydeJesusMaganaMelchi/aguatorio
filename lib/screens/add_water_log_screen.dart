@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:aguatorio/models/activity.dart';
-import 'package:aguatorio/services/mock_api_service.dart'; // Importado
+import 'package:aguatorio/services/mock_api_service.dart';
+import 'package:aguatorio/services/database_service.dart';
+import 'package:aguatorio/services/auth_service.dart';
 import 'package:aguatorio/widgets/responsive_layout_wrapper.dart';
 
 class AddWaterLogScreen extends StatefulWidget {
@@ -19,7 +21,10 @@ class _AddWaterLogScreenState extends State<AddWaterLogScreen> {
   final List<int> _amountOptions = [250, 500, 750, 1000];
 
   // 2. Estado para el Dropdown de Actividades
-  final _api = MockApiService(); // <-- ¡El cerebro falso ya está aquí!
+  final _databaseService = DatabaseService(); // Servicio de base de datos real
+  final _authService = AuthService(); // Servicio de autenticación real
+  final _api =
+      MockApiService(); // Mantenemos MockApi por ahora solo para getActivities si no hay backend para eso aún
   List<Activity> _activityOptions = [];
   Activity? _selectedActivity;
   bool _isLoadingActivities = true;
@@ -34,6 +39,8 @@ class _AddWaterLogScreenState extends State<AddWaterLogScreen> {
 
   Future<void> _fetchActivities() async {
     try {
+      // Por ahora seguimos usando el mock para las actividades
+      // hasta que tengamos una colección de actividades en Firestore
       final activities = await _api.getActivities();
       if (mounted) {
         setState(() {
@@ -68,21 +75,25 @@ class _AddWaterLogScreenState extends State<AddWaterLogScreen> {
     );
 
     try {
-      // --- ¡ESTA ES LA LÍNEA QUE FALTABA! ---
-      // Llama al "cerebro falso" para que SUME el consumo
-      await _api.postWaterLog(
-        _selectedAmountMl,
-        timestamp,
-        _selectedActivity?.id, // Pasa el ID de la actividad (o null)
+      final user = _authService.currentUser;
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Llama al servicio real para guardar el log
+      await _databaseService.addWaterLog(
+        uid: user.uid,
+        amount: _selectedAmountMl,
+        timestamp: timestamp,
+        activityId: _selectedActivity?.id.toString(),
       );
-      // --- FIN DE LA LÓGICA FALTANTE ---
 
       // Si todo sale bien, cierra la pantalla
       if (mounted) {
         Navigator.of(context).pop(); // Vuelve a la HomeTab
       }
     } catch (e) {
-      // Si hay un error (simulado)
+      // Si hay un error
       if (mounted) {
         ScaffoldMessenger.of(
           context,
